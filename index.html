@@ -21,8 +21,8 @@ html {
 
 body {
   font-family: "Roboto", sans-serif;
-  background: linear-gradient(to right top, rgb(92, 44, 202), rgb(49, 78, 184));
-	display: flex;
+  background: radial-gradient(89% 150% at top left,transparent 92%, #111111 92.1%),linear-gradient(to right top, rgb(92, 44, 202), rgb(49, 78, 184));
+  display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
@@ -30,18 +30,14 @@ body {
 
 h1 {
   color: rgb(255, 255, 255);
-  font-size: 130px;
+  font-size: 140px;
 }
 
-.landing-page {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-}
-
-a {
-  text-decoration: none;
+.world-gradient {
+	background: linear-gradient(to right top, rgb(182, 77, 255), rgb(255, 87, 185));
+	background-clip: text;
+	-webkit-background-clip: text;
+	color: transparent;
 }
 
 .container {
@@ -56,11 +52,13 @@ a {
     width: 750px;
   }
 }
+
 @media (min-width: 992px) {
   .container {
     width: 970px;
   }
 }
+
 @media (min-width: 1200px) {
   .container {
     width: 1170px;
@@ -71,15 +69,62 @@ a {
   background: rgba(103, 77, 234, 0.1);
   color: #674dea;
 }
+
+.navigation {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  display: flex;
+}
+
+.navigation a {
+  font-size: 18px;
+  width: auto;
+  text-decoration: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  color: white;
+  font-weight: 400;
+  padding: 8px 15px;
+  margin: 0px 5px;
+  transition: background-color 0.3s ease, opacity 0.3s ease;
+}
+
+.navigation a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+}
+
+.navigation .button {
+  font-size: 18px;
+  margin-left: 20px;
+  background-color: white;
+  color: #353535d2;
+  border: none;
+}
+
+.navigation .button:hover {
+  background-color: #f2f2f2;
+  opacity: 1;
+}
 		</style>
 	</head>
 
   <body>
+    <div class="navigation">
+      <a href="https://arc.raa.is/index.html">archive</a>
+      <a href="https://s3.raa.is/public/index.html">s3</a>
+      <a href="https://github.com/Raais" class="button">GitHub ➜</a>
+    </div>
+
     <div class="landing-page">
       <div class="content">
+          
         <div class="container">
           <div class="info">
-            <h1>hello world.</h1>
+              <h1>hello <span class="world-gradient">world</span>.</h1>
         </div>
       </div>
     </div>
