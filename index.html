@@ -1,132 +1,227 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>raa.is</title>
-    <meta charset="UTF-8" />
-		<link rel="stylesheet" href="styles.css" />
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-		<style>
-			* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+<html lang="en">
 
-html {
-  height: 100%;
-  width: 100%;
-}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Finger+Paint&family=Rubik+Marker+Hatch&display=swap"
+    rel="stylesheet">
+  <title>raa.is</title>
 
-body {
-  font-family: "Roboto", sans-serif;
-  background: radial-gradient(89% 150% at top left,transparent 92%, #111111 92.1%),linear-gradient(to right top, rgb(92, 44, 202), rgb(49, 78, 184));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-}
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
 
-h1 {
-  color: rgb(255, 255, 255);
-  font-size: 140px;
-}
+    canvas[resize] {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
 
-.world-gradient {
-	background: linear-gradient(to right top, rgb(182, 77, 255), rgb(255, 87, 185));
-	background-clip: text;
-	-webkit-background-clip: text;
-	color: transparent;
-}
+    .title {
+      font-family: "Finger Paint", serif;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 10.1vw;
+      font-optical-sizing: auto;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.89);
+      text-align: center;
+      filter: blur(0.03rem);
+      text-shadow: 0px 2px 3px rgba(255, 255, 255, 0.8);
+      -webkit-background-clip: text;
+      -moz-background-clip: text;
+      background-clip: text;
+      opacity: 0.89;
+      white-space: nowrap;
+    }
 
-.container {
-  padding-left: 15px;
-  padding-right: 15px;
-  margin-left: auto;
-  margin-right: auto;
-}
+    @keyframes anim {
+      0% {
+        color: rgba(255, 255, 255, 0.93);
+        transform: rotate(0deg);
+        text-shadow: -2px 2px 0px white,
+          -4px 4px 0px red,
+          -6px 6px 0px blue,
+          -8px 8px 0px yellow;
+      }
 
-@media (min-width: 768px) {
-  .container {
-    width: 750px;
-  }
-}
+      25% {
+        color: rgba(255, 255, 255, 0.93);
+        transform: rotate(0deg);
+        text-shadow: -2px 2px 0px white,
+          -4px 4px 0px blue,
+          -6px 6px 0px red,
+          -8px 8px 0px yellow;
+      }
 
-@media (min-width: 992px) {
-  .container {
-    width: 970px;
-  }
-}
+      50% {
+        color: rgba(255, 255, 255, 0.95);
+        transform: rotate(0deg);
+        text-shadow: -2px 2px 0px white,
+          -4px 4px 0px red,
+          -6px 6px 0px blue,
+          -8px 8px 0px yellow;
+      }
 
-@media (min-width: 1200px) {
-  .container {
-    width: 1170px;
-  }
-}
+      75% {
+        color: rgba(255, 255, 255, 0.93);
+        transform: rotate(0.5deg);
+        text-shadow: -2px 2px 0px white,
+          -4px 4px 0px blue,
+          -6px 6px 0px red,
+          -8px 8px 0px yellow;
+      }
 
-::selection {
-  background: rgba(103, 77, 234, 0.1);
-  color: #674dea;
-}
+      100% {
+        color: rgba(255, 255, 255, 0.93);
+        transform: rotate(0deg);
+        text-shadow: -2px 2px 0px white,
+          -4px 4px 0px red,
+          -6px 6px 0px blue,
+          -8px 8px 0px yellow;
+      }
+    }
 
-.navigation {
-  position: absolute;
-  top: 20px;
-  right: 30px;
-  display: flex;
-}
+    .title2 {
+      font-family: "Rubik Marker Hatch", serif;
+      font-size: 11.5vw;
+      color: rgba(255, 255, 255, 0.95);
+      filter: blur(0.03rem);
+      opacity: 0.95;
+      display: inline-block;
+      animation: anim 1s infinite linear;
+      text-shadow: -2px 2px 0px white,
+        -4px 4px 0px red,
+        -6px 6px 0px blue,
+        -8px 8px 0px yellow;
+    }
 
-.navigation a {
-  font-size: 18px;
-  width: auto;
-  text-decoration: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 8px;
-  color: white;
-  font-weight: 400;
-  padding: 8px 15px;
-  margin: 0px 5px;
-  transition: background-color 0.3s ease, opacity 0.3s ease;
-}
+    nav {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background-color: transparent;
+      border: none;
+      z-index: 10;
+    }
 
-.navigation a:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  opacity: 1;
-}
+    .navbar-buttons {
+      position: absolute;
+      top: 50%;
+      right: 20px;
+      transform: translateY(-50%);
+    }
 
-.navigation .button {
-  font-size: 18px;
-  margin-left: 20px;
-  background-color: white;
-  color: #353535d2;
-  border: none;
-}
+    .button {
+      display: inline-block;
+      margin-left: 10px;
+      width: 80px;
+      height: 20px;
+      border-radius: 5px;
+      border: none;
+      background-color: transparent;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
 
-.navigation .button:hover {
-  background-color: #f2f2f2;
-  opacity: 1;
-}
-		</style>
-	</head>
+    .red {
+      background-color: red;
+    }
 
-  <body>
-    <div class="navigation">
-      <a href="https://arc.raa.is/index.html">archive</a>
-      <a href="https://s3.raa.is/public/index.html">s3</a>
-      <a href="https://github.com/Raais" class="button">GitHub ➜</a>
+    .blue {
+      background-color: blue;
+    }
+
+    .yellow {
+      background-color: yellow;
+    }
+
+    .button:hover {
+      opacity: 0.5;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: transparent;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas" resize></canvas>
+  <div class="title">Hello <span class="title2">World</span>.</div>
+
+  <nav>
+    <div class="navbar-buttons">
+      <a href="https://www.youtube.com/watch?v=nDbeqj-1XOo" target="_blank">
+        <button class="button yellow"></button>
+      </a>
+      <a href="https://arc.raa.is/index.html" target="_blank">
+        <button class="button blue"></button>
+      </a>
+      <a href="https://github.com/Raais" target="_blank">
+        <button class="button red"></button>
+      </a>
     </div>
+  </nav>
 
-    <div class="landing-page">
-      <div class="content">
-          
-        <div class="container">
-          <div class="info">
-              <h1>hello <span class="world-gradient">world</span>.</h1>
-        </div>
-      </div>
-    </div>
-  </body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+    integrity="sha512-v2CJ7UaYy4JwQLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.18/paper-full.min.js"
+    integrity="sha512-qaPSGmKTwpu5ChwJ6AD3w7ecS3yM7pFC1cS3IfnjPM67dhXoymEomk1wqiZEHUFO4dQO1bhjo8LYImVDSDfR1g=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function () {
+    });
+  </script>
+  <script type="text/paperscript" canvas="canvas">
+      var mousePoint = view.center;
+      var amounts = [75, 250, 300, 500];
+      var amount = amounts[Math.floor(Math.random() * amounts.length)];
+      var colors = ['red', 'yellow', 'blue', 'white'];
+      
+      for (var i = 0; i < amount; i++) {
+        var rect = new Rectangle([0, 0], [25, 25]);
+        rect.center = mousePoint;
+        var path = new Path.Rectangle(rect, 10);
+        path.fillColor = colors[i % 4];
+        var scale = (1 - i / amount) * 18;
+        path.scale(scale);
+      }
+      
+      function onMouseMove(event) {
+        mousePoint = event.point;
+      }
+      
+      var children = project.activeLayer.children;
+      function onFrame(event) {
+        for (var i = 0, l = children.length; i < l; i++) {
+          var item = children[i];
+          var delta = (mousePoint - item.position) / (i + 5);
+          item.rotate(Math.sin((event.count + i) / 10) * 7);
+          if (delta.length > 0.1)
+            item.position += delta;
+        }
+      }
+    </script>
+</body>
+
 </html>
