@@ -1,0 +1,20 @@
+name = "canvas"
+compatibility_date = "2024-08-07"
+
+[env.dev]
+name = "canvas"
+kv_namespaces = [
+    { binding = "KV", id = "YOUR KV ID" }
+]
+
+[env.dev.vars]
+ENVIRONMENT = "development"
+
+[env.production]
+name = "canvas"
+kv_namespaces = [
+    { binding = "KV", id = "YOUR KV ID" }
+]
+
+[env.production.vars]
+ENVIRONMENT = "production"

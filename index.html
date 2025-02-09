@@ -2,225 +2,1075 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Finger+Paint&family=Rubik+Marker+Hatch&display=swap"
-    rel="stylesheet">
-  <title>raa.is</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Finger+Paint&family=Rubik+Marker+Hatch&display=swap"
+        rel="stylesheet">
+    <title>raa.is</title>
+    <script type="text/javascript" src="js/canto.js"></script>
+    <script type="text/javascript" src="js/jsEx.js"></script>
+    <script type="text/javascript" src="js/classes.js"></script>
+    <script type="text/javascript" src="js/brushes.js"></script>
+    <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript" src="js/paper-full.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        var debug1;
+        window.addEventListener('load', function () {
+            var debug1;
+            var NormalPaper = VirtualPaper.extend({
+                config: {
+                    degreeOfSmoothness: {
+                        name: "Degree Of Smoothness",
+                        type: "range",
+                        min: 0,
+                        max: 1,
+                        step: 0.5,
+                        value: 0.5
+                    },
+                    absorbingAbility: {
+                        name: "Absorbing Ability",
+                        type: "range",
+                        min: 0,
+                        max: 1,
+                        step: 0.5,
+                        value: 0.5
+                    },
+                    diffusionControlFactor: {
+                        name: "Diffusion Control Factor",
+                        type: "range",
+                        min: 0,
+                        max: 1,
+                        step: 0.5,
+                        value: 0.5
+                    },
+                    dryingFactor: {
+                        name: "Drying Factor",
+                        type: "range",
+                        min: 0,
+                        max: 1,
+                        step: 0.5,
+                        value: 0.5
+                    }
+                },
+                init: function (a, b) {
+                    this._super(a, b);
+                    this._Canvas = document.getElementById(a);
+                    this._Content = this._Canvas.getContext('2d');
+                }
+            });
 
-  <style>
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
+            window.ChineseCalligraphyBrush = Tool.extend({
+                config: {
+                    offset: {
+                        x: 0,
+                        y: 0
+                    },
+                    color: {
+                        name: "Ink Color",
+                        type: "color",
+                        value: [0, 0, 0]
+                    },
+                    size: {
+                        name: "PaintBrush Size",
+                        type: "range",
+                        min: 0,
+                        max: 30,
+                        step: 0.5,
+                        value: 10
+                    },
+                    degreeOfElasticity: {
+                        name: "Degree Of Elasticity",
+                        type: "range",
+                        min: 0.1,
+                        max: 1,
+                        step: 0.1,
+                        value: 1
+                    },
+                    thresholdForSplitting: {
+                        name: "Threshold For Splitting",
+                        type: "range",
+                        min: 0.1,
+                        max: 1,
+                        step: 0.1,
+                        value: 1
+                    },
+                    relocationFactor: {
+                        name: "Relocation Factor",
+                        type: "range",
+                        min: 0.1,
+                        max: 1,
+                        step: 0.1,
+                        value: 1
+                    },
+                    elongationCoefficient: {
+                        name: "Elongation Coefficient",
+                        type: "range",
+                        min: 0.1,
+                        max: 1,
+                        step: 0.1,
+                        value: 1
+                    },
+                    colorRenderingConrolFactor: {
+                        name: "Color Rendering Conrol Factor",
+                        type: "range",
+                        min: 0.1,
+                        max: 1,
+                        step: 0.1,
+                        value: 1
+                    },
+                    inkDiffusionDistanceFactor: {
+                        name: "Ink Diffusion Distance Factor",
+                        type: "range",
+                        min: 0.1,
+                        max: 1,
+                        step: 0.1,
+                        value: 1
+                    }
+                },
+                _virtualPaper: null,
+                _lastPosition: null,
+                _lastMoveTime: null,
+                _velocityDampener: 0, /*_velocityDampener: new MathEx.Dampener(10)*/
+                init: function (canvasElement, virtualPaper, offset) {
+                    //this._super(canvasElement, virtualPaper);
+                    this.config.offset = $.extend(this.config.offset, offset);
+                    this._canvasElement = canvasElement;
+                    this._context = this._canvasElement.getContext('2d');
+                    this.previousBrushSize = 0;
+                    this.splineBuffer = [];
+                    this.previousVelocity = 0;
+                    this.already = true;
 
-    canvas[resize] {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-    }
+                    debug1 = $(this);
+                    // console.log("!");
+                },
+                dispose: function () {
+                    //this._super()
+                },
+                mousedown: function (a, b, c, d) {
+                    //this._super(a, b);
+                    this.previousBrushSize = 0,
+                        this.brushUsing = null,
+                        this.splineBuffer = null,
+                        this.splineBuffer = [],
+                        this.drawStroke(a, b, c, d, false),
+                        this._lastPosition = {
+                            x: c,
+                            y: d
+                        },
+                        this._lastMoveTime = (new Date).getTime(),
+                        this.already = false;
+                },
+                mouseup: function (a, b, c, d) {
+                    //this._super(a, b);
+                    this.drawStroke(this._lastPosition.x, this._lastPosition.y, a, b, true), this._lastPosition = {
+                        x: a,
+                        y: b
+                    }, this._lastMoveTime = (new Date).getTime();
+                },
+                mousemove: function (a, b, c, d) {
+                    //this._super(a, b);
 
-    .title {
-      font-family: "Finger Paint", serif;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 10.1vw;
-      font-optical-sizing: auto;
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.89);
-      text-align: center;
-      filter: blur(0.03rem);
-      text-shadow: 0px 2px 3px rgba(255, 255, 255, 0.8);
-      -webkit-background-clip: text;
-      -moz-background-clip: text;
-      background-clip: text;
-      opacity: 0.89;
-      white-space: nowrap;
-    }
+                    this.drawStroke(this._lastPosition.x, this._lastPosition.y, a, b, false), this._lastPosition = {
+                        x: a,
+                        y: b
+                    }, this._lastMoveTime = (new Date).getTime();
+                },
+                mousehover: function (a, b) {
+                    // this._super(a, b);//, this._drawPreviewAt(a, b)
+                },
+                mouseout: function (a, b) {
+                    //this._super(a, b), this._canvasElement.reset();
+                },
+                drawLine: function (a, b, c, d, e, f, g) {
+                    this._context.beginPath();
+                    this._context.moveTo(a, b);
+                    this._context.lineTo(c, d);
+                    this._context.stroke({
+                        lineWidth: 1,
+                        strokeStyle: 'round',
+                        lineCap: 'round'
+                    });
+                    return this;
+                },
+                curve: function (t, b, c, d) {
+                    return c * t / d + b;
+                },
+                drawStroke: function (x1, y1, x2, y2, brushEnded) {
+                    x1 -= this.config.offset.x;
+                    y1 -= this.config.offset.y;
+                    x2 -= this.config.offset.x;
+                    y2 -= this.config.offset.y;
 
-    @keyframes anim {
-      0% {
-        color: rgba(255, 255, 255, 0.93);
-        transform: rotate(0deg);
-        text-shadow: -2px 2px 0px white,
-          -4px 4px 0px red,
-          -6px 6px 0px blue,
-          -8px 8px 0px yellow;
-      }
+                    /// <summary>Draw stroke line (Spline).</summary>
+                    if (x2 == 0 && y2 == 0) // tcuch screen hard code hardcode prevention debug
+                        return;
 
-      25% {
-        color: rgba(255, 255, 255, 0.93);
-        transform: rotate(0deg);
-        text-shadow: -2px 2px 0px white,
-          -4px 4px 0px blue,
-          -6px 6px 0px red,
-          -8px 8px 0px yellow;
-      }
+                    this.splineBuffer.push({ x: x2, y: y2 });
 
-      50% {
-        color: rgba(255, 255, 255, 0.95);
-        transform: rotate(0deg);
-        text-shadow: -2px 2px 0px white,
-          -4px 4px 0px red,
-          -6px 6px 0px blue,
-          -8px 8px 0px yellow;
-      }
+                    // ==== brush selection
+                    var brushUsing = Html5Paint.Resources.KasureBrushes.Small;
 
-      75% {
-        color: rgba(255, 255, 255, 0.93);
-        transform: rotate(0.5deg);
-        text-shadow: -2px 2px 0px white,
-          -4px 4px 0px blue,
-          -6px 6px 0px red,
-          -8px 8px 0px yellow;
-      }
+                    if (this.splineBuffer.length > 6 && brushEnded == false) {
+                        //console.log("!");
+                        var angle = MathEx.lawOfCosine(x1, y1, x2, y2, x1, y1 - 1);
+                        //console.log(angle);
+                        if (angle >= (45 / 360) * Math.PI && angle < (135 / 360) * Math.PI)
+                            brushUsing = Html5Paint.Resources.KasureBrushesMingEdited.A;
+                        else if (angle >= (135 / 360) * Math.PI && angle < (225 / 360) * Math.PI)
+                            brushUsing = Html5Paint.Resources.KasureBrushesMingEdited.B;
+                        else if (angle >= (225 / 360) * Math.PI && angle < (315 / 360) * Math.PI)
+                            brushUsing = Html5Paint.Resources.KasureBrushesMingEdited.C;
+                        else //if(angle <=45 || angle >315)
+                            brushUsing = Html5Paint.Resources.KasureBrushesMingEdited.D;
+                        // console.log(brushUsing);
+                    }
+                    /*	*/
 
-      100% {
-        color: rgba(255, 255, 255, 0.93);
-        transform: rotate(0deg);
-        text-shadow: -2px 2px 0px white,
-          -4px 4px 0px red,
-          -6px 6px 0px blue,
-          -8px 8px 0px yellow;
-      }
-    }
+                    // Draw Stroke part (Spline)
+                    if (this.splineBuffer.length > 3) {
+                        // ---- stroke setup
+                        var t = (new Date).getTime() - this._lastMoveTime;
+                        var distance = MathEx.distance(x1, y1, x2, y2);
+                        var velocity = distance / Math.max(1, t);
+                        var accelerate = (this.previousVelocity == 0) ? 0 : velocity / this.previousVelocity;
 
-    .title2 {
-      font-family: "Rubik Marker Hatch", serif;
-      font-size: 11.5vw;
-      color: rgba(255, 255, 255, 0.95);
-      filter: blur(0.03rem);
-      opacity: 0.95;
-      display: inline-block;
-      animation: anim 1s infinite linear;
-      text-shadow: -2px 2px 0px white,
-        -4px 4px 0px red,
-        -6px 6px 0px blue,
-        -8px 8px 0px yellow;
-    }
+                        var brushSize = Math.max(this.config.size.min,
+                            this.curve(velocity,
+                                this.config.size.max,
+                                (-this.config.size.max) - this.config.size.min,
+                                5 //this.velocityPressureCoff
+                            )
+                        );
+                        var segCount = 40; // spline
+                        var buffLen = this.splineBuffer.length;
+                        //console.log('buffLen=',buffLen)
+                        var points = Array.apply(null, this.splineBuffer);
+                        points = points.slice(points.length - 4);
 
-    nav {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 50px;
-      background-color: transparent;
-      border: none;
-      z-index: 10;
-    }
+                        points.unshift(points[0]);
+                        points.push(points[points.length - 1]);
+                        // console.log(points.length,points.map(function(e){ return e.x+"," +e.y;}).join('; '));
+                        // console.log('points.length=', points.length);
+                        for (var j = 0, m = points.length - 3; j < m; j++) {
+                            var p0 = points[j];
+                            var p1 = points[j + 1];
+                            var p2 = points[j + 2];
+                            var p3 = points[j + 3];
+                            var v0 = { x: (p2.x - p0.x) / 2, y: (p2.y - p0.y) / 2, s: (p2.s - p0.s) };
+                            var v1 = { x: (p3.x - p1.x) / 2, y: (p3.y - p1.y) / 2, s: (p3.s - p1.s) };
 
-    .navbar-buttons {
-      position: absolute;
-      top: 50%;
-      right: 20px;
-      transform: translateY(-50%);
-    }
+                            var tmp1 = (2 * p1.x - 2 * p2.x + v0.x + v1.x);
+                            var tmp2 = (-3 * p1.x + 3 * p2.x - 2 * v0.x - v1.x);
+                            var tmp3 = (2 * p1.y - 2 * p2.y + v0.y + v1.y);
+                            var tmp4 = (-3 * p1.y + 3 * p2.y - 2 * v0.y - v1.y);
 
-    .button {
-      display: inline-block;
-      margin-left: 10px;
-      width: 80px;
-      height: 20px;
-      border-radius: 5px;
-      border: none;
-      background-color: transparent;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
+                            for (var i = 1, n = segCount + 1; i <= n; i++) {
+                                var seg = i / segCount;
+                                //console.log('i=',i)
+                                var tX = (tmp1 * Math.pow(seg, 3)) + (tmp2 * Math.pow(seg, 2)) + v0.x * seg + p1.x;
+                                var tY = (tmp3 * Math.pow(seg, 3)) + (tmp4 * Math.pow(seg, 2)) + v0.y * seg + p1.y;
 
-    .red {
-      background-color: red;
-    }
+                                var tS = this.previousBrushSize + ((brushSize - this.previousBrushSize) / segCount) * i;
 
-    .blue {
-      background-color: blue;
-    }
+                                if (this.previousBrushSize == brushSize && Math.random() < 0.3)
+                                    continue;
 
-    .yellow {
-      background-color: yellow;
-    }
+                                this._context.drawImage(brushUsing,
+                                    tX - (tS / 2),
+                                    tY - (tS / 2),
+                                    tS,
+                                    tS);
+                            }
+                        }
+                        this.previousBrushSize = brushSize, this.already = true;
+                        points.length = 0;
+                    }
 
-    .button:hover {
-      opacity: 0.5;
-    }
+                },
+                drawStrokeOld: function (x1, y1, x2, y2, brushSize, e, f) {
+                    /*this._context.drawImage(Html5Paint.Resources.KasureBrushes.Small,
+                      x1 - (50/2),
+                      y1 - (50/2),
+                      50,
+                      50);*/
 
-    nav a {
-      text-decoration: none;
-      color: transparent;
-    }
-  </style>
+                    var segCount = 40; // spline
+                    var p1 = { x: x1, y: y1 };
+                    var p2 = { x: x2, y: y2 };
+                    var v0 = { x: (x2 - x1) / 2, y: (y2 - y1) / 2 };
+                    var v1 = { x: (x2 - x1) / 2, y: (y2 - y1) / 2 };
+
+                    var tmp1 = (2 * p1.x - 2 * p2.x + v0.x + v1.x);
+                    var tmp2 = (-3 * p1.x + 3 * p2.x - 2 * v0.x - v1.x);
+                    var tmp3 = (2 * p1.y - 2 * p2.y + v0.y + v1.y);
+                    var tmp4 = (-3 * p1.y + 3 * p2.y - 2 * v0.y - v1.y);
+
+                    for (var i = 1, n = segCount + 1; i <= n; i++) {
+                        var seg = i / segCount;
+                        var tX = (tmp1 * Math.pow(seg, 3)) + (tmp2 * Math.pow(seg, 2)) + v0.x * seg + p1.x;
+                        var tY = (tmp3 * Math.pow(seg, 3)) + (tmp4 * Math.pow(seg, 2)) + v0.y * seg + p1.y;
+                        var tS = this.previousBrushSize + ((brushSize - this.previousBrushSize) / segCount) * i;
+
+                        if (this.previousBrushSize == brushSize && Math.random() < 0.3)
+                            continue;
+
+
+                        this._context.drawImage(Html5Paint.Resources.KasureBrushes.Small,
+                            tX - (tS / 2),
+                            tY - (tS / 2),
+                            tS,
+                            tS);
+                    }
+                }
+            });
+
+            var Surface = Class.extend({
+                _config: {
+                    isEaserMode: false,
+                    fillColor: "rgba(0,0,0,0.25)",
+                    pencilWidth: 25,
+                    oldFillStyle: null
+                },
+                _canvasElement: null,
+                _sharedCanvasElement: null,
+                _updateCallback: null,
+                _width: null,
+                _height: null,
+                _offset: {
+                    x: 0,
+                    y: 0
+                },
+                init: function (canvasElement, updateCallback, offset) {
+                    // alert(JSON.stringify(offset));
+                    this._offset = offset;
+                    this._canvasElement = canvasElement,
+                        this._width = canvasElement.width,
+                        this._height = canvasElement.height,
+                        this._updateCallback = updateCallback,
+                        this._initEventHandlers(),
+                        this._prevMousePoint = [0, 0],
+                        this._prevSmoothMousePoint = [0, 0],
+                        this._prevMouseChangeVector = [0, 0],
+                        this._mouseSmoothingFactor = 0.3,
+                        this._lastRotation = Math.PI / 2,
+                        this._ctx = this._canvasElement.getContext('2d'),
+                        this._config.oldFillStyle = this._ctx.fillStyle,
+                        this._config.oldLineWidth = this._ctx.lineWidth,
+                        this.isDrawing = false,
+                        this.penStyle = 'art',
+                        this.easerPenWidth = 40,
+                        this.eventBinded = false;
+                },
+                setTool: function (toolName) {
+                    this._activeTool instanceof Tool && this._activeTool.dispose();
+                    this._canvasElement.style.cursor = 'crosshair';
+
+                    // fixed: sill strange: todo
+                    //this._activeTool = new window['ChineseCalligraphyBrush'](this._canvasElement);
+                    this._activeTool = new window[toolName](this._canvasElement, null, this._offset);
+                    return this._activeTool;
+                },
+                getImageDataUrl: function () {
+                    return this._canvasElement.getNativeCanvas().toDataURL()
+                },
+                _initEventHandlers: function () {
+                    this._canvasElement.addEventListener('mousedown', delegate(this, this._onDrawStart), false);
+                    this._canvasElement.addEventListener('touchstart', delegate(this, this._onDrawStart), false);
+                    this._canvasElement.addEventListener('mousemove.Hover', delegate(this, this._onMouseHover), false);
+                    this._canvasElement.addEventListener('mouseout.Hover', delegate(this, this._onMouseOut), false);
+
+                },
+                _penStyleChanged: function (c, d, pageX, pageY) {
+                    switch (this.penStyle) {
+                        case 'pen':
+                            //console.log('c=', c, 'd=', d);
+                            this._ctx.beginPath();
+                            this._ctx.moveTo(c, d);
+                            break;
+                        case 'easer':
+                            this._ctx.beginPath();
+                            break;
+                        case 'art':
+                        default:
+                            break;
+                    }
+                },
+                _onDrawStart: function (a) { // == variable 'a': event == //
+                    //console.log('_onDrawStart',(new Date).getTime());
+                    //console.log('_onDrawStart', 'penStyle=', this.penStyle,'a=',a);
+                    this.isDrawing = true;
+                    a.preventDefault(), a.stopPropagation(), a.touches && (a = a.touches[0]);
+                    if (this._activeTool instanceof Tool) {
+
+                        var c = a.pageX - this._canvasElement.offsetLeft,
+                            d = a.pageY - this._canvasElement.offsetTop;
+
+                        this._resetMouseSmoothing(c, d),
+                            this._penStyleChanged(c - this._offset.x, d - this._offset.y, a.pageX, a.pageY),
+                            this._activeTool.mousedown(c, d, a.pageX, a.pageY);
+                        if (!this.eventBinded) {//事件尚未绑定，则绑定一次事件，否则直接跳过
+
+                            // todo: jquery!
+                            $(this._canvasElement).bind('mousemove', delegate(this, this._onDrawMove), false).bind('mouseup', delegate(this, this._onDrawEnd), false);
+
+                            //$(this._canvasElement).bind('touchmove.Draw',delegate(this, this._onDrawMove), false),
+                            //$(this._canvasElement).bind('touchend.Draw',delegate(this, this._onDrawEnd), false);
+                            this._canvasElement.addEventListener('touchmove', delegate(this, this._onDrawMove), false);
+
+                            this._canvasElement.addEventListener('touchend', delegate(this, this._onDrawEnd), false);
+
+                            //var e = document.getElementsByTagName('body')[0];
+                            //$('body').bind('mouseup.Draw',delegate(this, this._onDrawEnd), false);
+                            //$('body').addEventListener('touchend',delegate(this, this._onDrawEnd), false);
+
+                            this.eventBinded = true;
+                        }
+                    }
+                },
+                _onDrawEnd: function (a) {
+                    a.preventDefault(), a.stopPropagation();
+                    // console.log('_onDrawEnd', 'penStyle=', this.penStyle);
+                    this.isDrawing = false;
+                    var c = this._getSmoothMousePoint(a.pageX - this._canvasElement.offsetLeft, a.pageY - this._canvasElement.offsetTop);
+                    $(this._canvasElement).unbind(".Draw"), $("body").unbind(".Draw"), this._activeTool.mouseup(c[0],
+                        c[1],
+                        a.pageX,
+                        a.pageY);
+                    // this._ctx.closePath();
+                },
+                _onDrawMove: function (a) {
+                    //console.log('_onDrawMove', 'isDrawing', this.isDrawing);
+                    if (!this.isDrawing)
+                        return;
+
+                    a.preventDefault(), a.stopPropagation(), a.touches && (a = a.touches[0]);
+                    var c = this._getSmoothMousePoint(a.pageX - this._canvasElement.offsetLeft, a.pageY - this._canvasElement.offsetTop);
+                    var position = {
+                        x: c[0] - this._offset.x,
+                        y: c[1] - this._offset.y
+                    }
+                    switch (this.penStyle) {
+                        case 'pen':
+                            // console.log(position)
+                            this._ctx.lineTo(position.x, position.y);
+                            this._ctx.stroke();
+                            break;
+                        case 'easer':
+                            this._ctx.arc(position.x, position.y, this.easerPenWidth, 0, 2 * Math.PI, true);
+                            this._ctx.fill();
+                            break;
+                        case 'art':
+                        default:
+                            this._activeTool.mousemove(c[0], c[1], a.pageX, a.pageY);
+                            break;
+                    }
+                },
+                _onMouseHover: function (a) {
+                    a.preventDefault(), a.touches && (a = a.touches[0]);
+                    //var b = this._canvasElement.offset();
+                    this._activeTool.mousehover(a.pageX - this._canvasElement.offsetLeft, a.pageY - this._canvasElement.offsetTop, a.pageX, a.pageY)
+                },
+                _onMouseOut: function (a) {
+                    // console.log('_onMouseOut')
+                    a.preventDefault(), a.touches && (a = a.touches[0]);
+                    //var b = this._canvasElement.offset();
+                    this._activeTool.mouseout(a.pageX - this._canvasElement.offsetLeft,
+                        a.pageY - this._canvasElement.offsetTop,
+                        a.pageX,
+                        a.pageY);
+                },
+                _resetMouseSmoothing: function (a, b) {
+                    this._prevMousePoint = this._prevSmoothMousePoint = [a, b], this._lastRotation = Math.PI / 2, this._prevMouseChangeVector = [0, 0]
+                },
+                _getSmoothMousePoint: function (a, b) {
+                    var c = [a - this._prevMousePoint[0], b - this._prevMousePoint[1]],
+                        d = this._prevSmoothMousePoint[0],
+                        e = this._prevSmoothMousePoint[1];
+                    c[0] * this._prevMouseChangeVector[0] + c[1] * this._prevMouseChangeVector[1] < 0 && (d = this._prevSmoothMousePoint[0] = this._prevMousePoint[0], e = this._prevSmoothMousePoint[1] = this._prevMousePoint[1], this._lastRotation += Math.PI), this._prevMouseChangeVector = c, this._prevMousePoint = [a, b], d = d + this._mouseSmoothingFactor * (a - d), e = e + this._mouseSmoothingFactor * (b - e);
+                    var f = d - this._prevSmoothMousePoint[0],
+                        g = d - this._prevSmoothMousePoint[1],
+                        h = Math.sqrt(f * f + g * g);
+                    this._prevSmoothMousePoint = [d, e];
+                    return [d, e];
+                },
+                clear: function () {
+                    //console.log('this._width=', this._width, 'this._height=', this._height)
+                    this._ctx.clearRect(0, 0, this._width, this._height);
+                },
+                drawStyle: function (pen) {
+                    switch (pen) {
+                        case 'pen':
+                            this.penStyle = 'pen';
+                            break;
+                        default:
+                            this.penStyle = 'art';
+                            break;
+                    }
+                },
+                drawMode: function (mode) {
+                    switch (mode) {
+                        case 'easer':
+                            this._config.isEaserMode = true;
+                            this._ctx.globalCompositeOperation = 'destination-out';
+                            this._ctx.fillStyle = this._config.fillColor;
+                            // this._ctx.lineWidth = this.easerPenWidth;
+                            this.penStyle = 'easer';//橡皮檫使用钢笔模式，则不受毛笔算法影响（橡皮檫宽度）
+                            break;
+                        default:
+                            this._ctx.globalCompositeOperation = 'source-over';
+                            this._ctx.fillStyle = this._config.oldFillStyle;
+                            this._ctx.lineWidth = this._config.oldLineWidth;
+                            this._config.isEaserMode = false;
+                    }
+                }
+            });
+
+
+            var App = Class.extend({
+                _config: {
+                    width: 200,
+                    height: 200,
+                    offset: {
+                        x: 0,
+                        y: 0
+                    },
+                    tools: [{
+                        type: "ChineseCalligraphyBrush",
+                        description: "Chinese Calligraphy Brush",
+                        icon: "tool-icon-chinese-calligraphy-brush",
+                        cursor: "crosshair"
+                    }],
+                    virtualPaper: [{
+                        type: "NormalPaper",
+                        description: "Normal Paper",
+                        icon: "paper-icon-normal-paper",
+                        cursor: "crosshair"
+                    }]
+                },
+                init: function (canvasElementID) {
+                    var canvasElementSelector = '#' + canvasElementID;
+                    var canvasOffset = $(canvasElementSelector).offset();
+                    this._config.offset =
+                    {
+                        x: canvasOffset.left,
+                        y: canvasOffset.top
+                    };
+                    this._config.width = $(canvasElementSelector).width();
+                    this._config.height = $(canvasElementSelector).height();
+                    this._initSurface(canvasElementID), this._initTools();
+                },
+                _initSurface: function (canvasElementID) {
+                    this._canvas = document.getElementById(canvasElementID);
+                    this._surface = new Surface(this._canvas, null, this._config.offset);
+                },
+                _initTools: function () {
+                    // todo: looping for tools and virtual Paper options ?
+                    var b = this._config.tools[0];
+                    this._surface.setTool(b.type);
+                },
+                _handleWindowResize: function () {
+
+                },
+                _resetCanvas: function () {
+                    //this._surface._resetCanvas();
+                }
+            });
+
+            window.app = new App("canvas2");
+
+            const canvas1 = $("#canvas")[0];
+            const canvas2 = $("#canvas2")[0];
+            const ctx2 = canvas2.getContext("2d");
+            let canvas2Init = false;
+            let isCanvas2Visible = false;
+            let isEraser = false;
+
+            const syncGet = async () => {
+                const url = "https://canvas.cabo.workers.dev/sync";
+                const response = await fetch(url, {
+                    method: "GET",
+                    headers: {
+                        "x-notsosecret-key": new Date().getMonth(),
+                    },
+                });
+                const blob = await response.blob();
+                const image = new Image();
+                image.src = URL.createObjectURL(blob);
+                image.onload = function () {
+                    const canvas = document.getElementById("canvas2");
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(image, 0, 0, image.width, image.height,
+                        0, 0, canvas.width, canvas.height
+                    );
+                };
+            }
+
+            const throttleAsync = (func, limit) => {
+                let inThrottle = false;
+
+                return async (...args) => {
+                    if (!inThrottle) {
+                        inThrottle = true;
+
+                        try {
+                            await func(...args);
+                        } finally {
+                            setTimeout(() => {
+                                inThrottle = false;
+                            }, limit);
+                        }
+                    }
+                };
+            };
+
+            const syncPost = throttleAsync(async () => {
+                if (isCanvas2Visible) {
+                    const standardWidth = 1920;
+                    const standardHeight = 1080;
+                    const resizedCanvas = document.createElement("canvas");
+                    resizedCanvas.width = standardWidth;
+                    resizedCanvas.height = standardHeight;
+                    const resizedContext = resizedCanvas.getContext("2d");
+                    resizedContext.drawImage(canvas2, 0, 0, standardWidth, standardHeight);
+
+                    const blob = await new Promise((resolve) => {
+                        resizedCanvas.toBlob(resolve);
+                    });
+
+                    if (blob) {
+                        const formData = new FormData();
+                        formData.append("image", blob);
+
+                        await fetch("https://canvas.cabo.workers.dev/sync", {
+                            method: "POST",
+                            body: formData,
+                            headers: {
+                                "x-notsosecret-key": new Date().getMonth(),
+                            },
+                        });
+
+                        resizedCanvas.remove();
+                    } else {
+                    }
+                }
+            }, 10000);
+
+            function resizeCanvas() {
+                canvas1.width = window.innerWidth;
+                canvas1.height = window.innerHeight;
+                canvas2.width = window.innerWidth;
+                canvas2.height = window.innerHeight;
+                if (isCanvas2Visible) syncGet();
+            }
+
+            resizeCanvas();
+
+            if (!canvas2Init) {
+                syncGet();
+            }
+
+            $(window).resize(resizeCanvas);
+            function toggleCanvas() {
+                if (isCanvas2Visible) {
+                    $(canvas2).hide();
+                    $(".tool-button").hide();
+                    $(".bottom-right-sticker").hide();
+                    $(".title").show();
+                    $(canvas1).show();
+                    if (paper.view) paper.view.play();
+                    if (paper.project) paper.project.clear();
+                    if (paper.view) paper.view.pause();
+                } else {
+                    // show canvas2
+                    canvas2Init = true;
+                    $(canvas1).hide();
+                    $(canvas2).show();
+                    $(".title").hide();
+                    $(".tool-button").show();
+                    $(".bottom-right-sticker").show();
+                }
+
+                isCanvas2Visible = !isCanvas2Visible;
+            }
+
+            $(".toggle-button").click(async function () {
+                if (!canvas2Init) {
+                    await syncGet();
+                } else {
+                    if (isCanvas2Visible) {
+                        await syncPost();
+                    }
+                }
+                toggleCanvas();
+                let toggledColor = isCanvas2Visible ? "rgb(0, 0, 0)" : "rgb(255, 255, 255)";
+                $(this).css("background-color", toggledColor);
+            });
+
+            $(".tool-button").click(function () {
+                if (isEraser) {
+                    app && app._surface.drawStyle('art');
+                    app && app._surface.drawMode();
+                    isEraser = false;
+                    $(this).css("background-color", "black");
+                } else {
+                    app && app._surface.drawMode('easer');
+                    isEraser = true;
+                    $(this).css("background-color", "tomato");
+                }
+            });
+
+            $("#canvas2").mouseup(syncPost);
+
+        }, false);
+    </script>
+    <script type="text/paperscript" canvas="canvas">
+        var mousePoint = view.center;
+        var amounts = [75, 250, 300, 500];
+        var amount = amounts[Math.floor(Math.random() * amounts.length)];
+        var colors = ['red', 'yellow', 'blue', 'white'];
+        
+        for (var i = 0; i < amount; i++) {
+          var rect = new Rectangle([0, 0], [25, 25]);
+          rect.center = mousePoint;
+          var path = new Path.Rectangle(rect, 10);
+          path.fillColor = colors[i % 4];
+          var scale = (1 - i / amount) * 18;
+          path.scale(scale);
+        }
+        
+        function onMouseMove(event) {
+          mousePoint = event.point;
+        }
+        
+        var children = project.activeLayer.children;
+        function onFrame(event) {
+          for (var i = 0, l = children.length; i < l; i++) {
+            var item = children[i];
+            var delta = (mousePoint - item.position) / (i + 5);
+            item.rotate(Math.sin((event.count + i) / 10) * 7);
+            if (delta.length > 0.1)
+              item.position += delta;
+          }
+        }
+      </script>
+    <style type="text/css">
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        canvas {
+            position: fixed;
+            background: rgba(255, 255, 255, 1);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        #canvas {
+            display: block;
+        }
+
+        #canvas2 {
+            display: none;
+            /* background: rgba(0, 0, 0, 0.1); */
+            z-index: 1;
+        }
+
+        .title {
+            font-family: "Finger Paint", serif;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10.1vw;
+            font-optical-sizing: auto;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.89);
+            text-align: center;
+            filter: blur(0.03rem);
+            /* text-shadow: 0px 2px 3px rgba(255, 255, 255, 0.8); */
+            background: repeating-linear-gradient(-45deg, yellow 5px, yellow 10px, blue 10px, blue 15px, red 15px, red 20px);
+            background-size: 100%;
+            background-repeat: repeat;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -moz-background-clip: text;
+            background-clip: text;
+            opacity: 0.89;
+            white-space: nowrap;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            animation: anim2 1s infinite linear;
+        }
+
+        @keyframes anim2 {
+            0% {
+                background: repeating-linear-gradient(-45deg, yellow 5px, yellow 10px, blue 10px, blue 15px, red 15px, red 20px);
+                background-size: 100%;
+                background-repeat: repeat;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                -moz-background-clip: text;
+                background-clip: text;
+            }
+
+            25% {
+                background: repeating-linear-gradient(-45deg, blue 5px, blue 10px, yellow 10px, yellow 15px, red 15px, red 20px);
+                background-size: 100%;
+                background-repeat: repeat;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                -moz-background-clip: text;
+                background-clip: text;
+            }
+
+            50% {
+                background: repeating-linear-gradient(-45deg, blue 5px, blue 10px, red 10px, red 15px, yellow 15px, yellow 20px);
+                background-size: 100%;
+                background-repeat: repeat;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                -moz-background-clip: text;
+                background-clip: text;
+            }
+
+            75% {
+                background: repeating-linear-gradient(-45deg, red 5px, red 10px, yellow 10px, yellow 15px, blue 15px, blue 20px);
+                background-size: 100%;
+                background-repeat: repeat;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                -moz-background-clip: text;
+                background-clip: text;
+            }
+
+            100% {
+                background: repeating-linear-gradient(-45deg, yellow 5px, yellow 10px, blue 10px, blue 15px, red 15px, red 20px);
+                background-size: 100%;
+                background-repeat: repeat;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                -moz-background-clip: text;
+                background-clip: text;
+            }
+        }
+
+        @keyframes anim {
+            0% {
+                color: rgba(255, 255, 255, 0.93);
+                transform: rotate(0deg);
+                text-shadow: -2px 2px 0px white,
+                    -4px 4px 0px red,
+                    -6px 6px 0px blue,
+                    -8px 8px 0px yellow;
+            }
+
+            25% {
+                color: rgba(255, 255, 255, 0.93);
+                transform: rotate(0deg);
+                text-shadow: -2px 2px 0px white,
+                    -4px 4px 0px blue,
+                    -6px 6px 0px red,
+                    -8px 8px 0px yellow;
+            }
+
+            50% {
+                color: rgba(255, 255, 255, 0.95);
+                transform: rotate(0deg);
+                text-shadow: -2px 2px 0px white,
+                    -4px 4px 0px red,
+                    -6px 6px 0px blue,
+                    -8px 8px 0px yellow;
+            }
+
+            75% {
+                color: rgba(255, 255, 255, 0.93);
+                transform: rotate(0.5deg);
+                text-shadow: -2px 2px 0px white,
+                    -4px 4px 0px blue,
+                    -6px 6px 0px yellow,
+                    -8px 8px 0px red;
+            }
+
+            100% {
+                color: rgba(255, 255, 255, 0.93);
+                transform: rotate(0deg);
+                text-shadow: -2px 2px 0px white,
+                    -4px 4px 0px red,
+                    -6px 6px 0px blue,
+                    -8px 8px 0px yellow;
+            }
+        }
+
+        .title2 {
+            font-family: "Rubik Marker Hatch", serif;
+            font-size: 11.5vw;
+            color: rgba(255, 255, 255, 0.95);
+            filter: blur(0.03rem);
+            opacity: 0.95;
+            display: inline-block;
+            animation: anim 1s infinite linear;
+            text-shadow: -2px 2px 0px white,
+                -4px 4px 0px red,
+                -6px 6px 0px blue,
+                -8px 8px 0px yellow;
+        }
+
+        nav {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background-color: transparent;
+            border: none;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .navbar-buttons {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            pointer-events: all;
+        }
+
+        .button {
+            display: inline-block;
+            margin-left: 10px;
+            width: 80px;
+            height: 20px;
+            border-radius: 5px;
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .red {
+            background-color: red;
+        }
+
+        .blue {
+            background-color: blue;
+        }
+
+        .yellow {
+            background-color: yellow;
+        }
+
+        .button:hover {
+            opacity: 0.5;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: transparent;
+        }
+
+        .bottom-left-buttons {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .button-white {
+            background-color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .top-button {
+            width: 30px;
+            height: 20px;
+            opacity: 0.5;
+        }
+
+        .tool-button {
+            display: none;
+            background-color: black;
+        }
+
+        .bottom-button {
+            width: 30px;
+            height: 30px;
+        }
+
+        .button-white:hover {
+            opacity: 0.7;
+        }
+
+        .bottom-right-sticker {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            display: none;
+            border-radius: 1px;
+            flex-direction: column;
+            gap: 5px;
+            background-color: red;
+            color: white;
+            font-size: 0.6rem;
+            font-family: Arial, sans-serif;
+            z-index: 999;
+            opacity: 0.5;
+        }
+
+        .topz {
+            z-index: 10;
+        }
+    </style>
+
 </head>
 
 <body>
-  <canvas id="canvas" resize></canvas>
-  <div class="title">Hello <span class="title2">World</span>.</div>
+    <canvas id="canvas" resize></canvas>
+    <canvas id="canvas2" resize></canvas>
+    <div class="title topz">Hello <span class="title2">World</span>.</div>
 
-  <nav>
-    <div class="navbar-buttons">
-      <a href="https://www.youtube.com/watch?v=nDbeqj-1XOo" target="_blank">
-        <button class="button yellow"></button>
-      </a>
-      <a href="https://arc.raa.is/index.html" target="_blank">
-        <button class="button blue"></button>
-      </a>
-      <a href="https://github.com/Raais" target="_blank">
-        <button class="button red"></button>
-      </a>
+    <nav>
+        <div class="navbar-buttons topz">
+            <a href="https://www.youtube.com/watch?v=nDbeqj-1XOo" target="_blank">
+                <button class="button yellow"></button>
+            </a>
+            <a href="https://arc.raa.is/index.html" target="_blank">
+                <button class="button blue"></button>
+            </a>
+            <a href="https://github.com/Raais" target="_blank">
+                <button class="button red"></button>
+            </a>
+        </div>
+    </nav>
+
+    <div class="bottom-left-buttons topz">
+        <button class="button-white top-button tool-button"></button>
+        <button class="button-white bottom-button toggle-button"></button>
     </div>
-  </nav>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
-    integrity="sha512-v2CJ7UaYy4JwQLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.18/paper-full.min.js"
-    integrity="sha512-qaPSGmKTwpu5ChwJ6AD3w7ecS3yM7pFC1cS3IfnjPM67dhXoymEomk1wqiZEHUFO4dQO1bhjo8LYImVDSDfR1g=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <div class="bottom-right-sticker">
+        This canvas is open to the public. I'm not responsible for anything drawn on it.
+    </div>
 
-  <script type="text/javascript">
-    $(document).ready(function () {
-    });
-  </script>
-  <script type="text/paperscript" canvas="canvas">
-      var mousePoint = view.center;
-      var amounts = [75, 250, 300, 500];
-      var amount = amounts[Math.floor(Math.random() * amounts.length)];
-      var colors = ['red', 'yellow', 'blue', 'white'];
-      
-      for (var i = 0; i < amount; i++) {
-        var rect = new Rectangle([0, 0], [25, 25]);
-        rect.center = mousePoint;
-        var path = new Path.Rectangle(rect, 10);
-        path.fillColor = colors[i % 4];
-        var scale = (1 - i / amount) * 18;
-        path.scale(scale);
-      }
-      
-      function onMouseMove(event) {
-        mousePoint = event.point;
-      }
-      
-      var children = project.activeLayer.children;
-      function onFrame(event) {
-        for (var i = 0, l = children.length; i < l; i++) {
-          var item = children[i];
-          var delta = (mousePoint - item.position) / (i + 5);
-          item.rotate(Math.sin((event.count + i) / 10) * 7);
-          if (delta.length > 0.1)
-            item.position += delta;
-        }
-      }
+    <script>
+
     </script>
 </body>
 
